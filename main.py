@@ -33,13 +33,13 @@ class App(ctk.CTk):
         # ]
 
         # Daily Detection Show
-        #! pack 부분을 update_step() 메서드로 대체
-        self.daily_frame = Daily_Detection_Show(self)
+        #! pack 부분을 update_step() 메서드로 대체 == pack의 옵션을 위의 주석처리한 프레임 생성 리스트에서 적용할 예정
+        self.daily_frame = DailyDetectionShow(self)
         self.daily_frame.pack(padx=50, pady=50, fill='both', expand=True)
 
         self.mainloop()  # 메인 루프 실행
 
-class Daily_Detection_Show(ctk.CTkFrame):
+class DailyDetectionShow(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(master=parent)
         # self['relief'] = 'groove'
@@ -60,7 +60,7 @@ class Daily_Detection_Show(ctk.CTkFrame):
         font = ctk.CTkFont(family=FONT, size=MAIN_LABEL_FONT_SIZE)
         self.label = ctk.CTkLabel(self, text='Detection Step', text_color=WHITE, font=font)
         self.label.grid(row=0, column=0)
-        print(f'self.label size: {self.label.winfo_geometry()}')
+        print(f'detection step - label size: {self.label.winfo_geometry()}')
 
         # step 정보 라벨 코드는 트리뷰 아래에 있음
 
@@ -115,7 +115,7 @@ class Daily_Detection_Show(ctk.CTkFrame):
 
 
         #! 파일 읽기 및 Treeview 업데이트
-        self.read_directory_and_update_treeview('C:\\Users\\qkrtk\\Desktop\\shelve_test', 'daily_files_shelve')
+        self.read_directory_and_update_treeview('..\\shelve_test', 'daily_files_shelve')
 
         self.testlabel = ctk.CTkLabel(self, text=f'총 파일 개수: {self.file_list_len}', font=('Arial', 16, 'bold'))
         self.testlabel.grid(row=1, column=0, sticky='nw', padx=(20, 0))
@@ -146,6 +146,47 @@ class Daily_Detection_Show(ctk.CTkFrame):
             for key in db:
                 file_info = db[key]
                 self.file_tree.insert("", "end", values=(file_info["파일명"], f"{file_info['크기']} bytes", file_info["수정 날짜"], file_info["전송 상태"]))
+
+class SendingProcessShow(ctk.CTkFrame):
+    def __init__(self, parent):
+        super().__init__(master=parent)
+        ''' TODO
+        1. 프레임 생성
+        2. 프레임 레이아웃 설정
+        3. 프레임 내용 설정
+            4. 프로그레스 바
+            5. 전송 상태 표시
+            6. detection -> MSGbox -> sending -> MSGbox -> 결과 출력(다른 프레임)
+        '''
+
+        # frame setting
+        self.grid(column=0, row=0, sticky='nsew', padx=50, pady=50)
+
+        # layout
+        # 4x3 그리드
+        self.rowconfigure(0, weight=1, uniform='b')
+        self.rowconfigure(1, weight=2, uniform='b')
+        self.rowconfigure(2, weight=8, uniform='b')
+        self.rowconfigure(3, weight=2, uniform='b')
+        self.columnconfigure(0, weight=1, uniform='b')
+        self.columnconfigure(1, weight=1, uniform='b')
+        self.columnconfigure(2, weight=1, uniform='b')
+
+        # step 설명 라벨
+        font = ctk.CTkFont(family=FONT, size=MAIN_LABEL_FONT_SIZE)
+        self.label = ctk.CTkLabel(self, text='Sending Process', text_color=WHITE, font=font)
+        self.label.grid(row=0, column=0)
+        print(f'sending process - label size: {self.label.winfo_geometry()}')
+
+        # 프로세스 바
+        #! 스레드 사용하여 프로세스 바 업데이트
+        
+
+        # 전송 상태 표시
+
+        # 제어 버튼
+        #! 사용자가 이상을 감지하고 중지 시킨 경우에 만약 새로 처음부터 보내야한다면, shelve에 있는 파일 제어를 어떻게 할 것인가?
+        #! 우선은 예외처리 없이 구현하고, 나중에 예외처리를 추가할 예정
 
 
 # 메인 함수

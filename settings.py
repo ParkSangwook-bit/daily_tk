@@ -7,8 +7,8 @@ from tkinter import ttk
 
 # data processing
 import json
-import pandas as pd
-import numpy as np
+# import pandas as pd
+# import numpy as np
 import csv
 import shelve
 
