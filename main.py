@@ -23,21 +23,30 @@ class App(ctk.CTk):
         # 창 중앙 배치 설정 (디스플레이 스케일링 고려)
         self.geometry(CenterWindowToDisplay(self, 1000, 600, self._get_window_scaling()))
 
-        # # 단계별 프레임 생성
-        # self.frames = [
-        #     self.create_frame1(),
-        #     self.create_frame2(),
-        #     self.create_frame3(),
-        #     self.create_frame4(),
-        #     self.create_frame5()
-        # ]
+        # 단계별 프레임 생성
+        self.frames = [
+            DailyDetectionShow(self),
+            SendingProcessShow(self),
+            # FinalFrame(self, self.restart)    #! 마지막 프레임: 아직 미구현
+        ]
 
-        # Daily Detection Show
-        #! pack 부분을 update_step() 메서드로 대체 == pack의 옵션을 위의 주석처리한 프레임 생성 리스트에서 적용할 예정
-        self.daily_frame = DailyDetectionShow(self)
-        self.daily_frame.pack(padx=50, pady=50, fill='both', expand=True)
+        self.current_frame_index = 0    # 현재 프레임 인덱스. 0부터 시작
 
-        self.mainloop()  # 메인 루프 실행
+        # 현재 프레임 표시
+        def current_frame_show(self):
+            for frame in self.frames:
+                frame.pack_forget()
+            self.frames[self.current_frame_index].pack(padx=50, pady=50, fill='both', expand=True)
+
+        # 다음 프레임으로 이동
+        def next_frame(self):
+            pass
+
+        # 이전 프레임으로 이동
+        def previos_frame(self):
+            pass
+
+        
 
 class DailyDetectionShow(ctk.CTkFrame):
     def __init__(self, parent):
@@ -157,6 +166,8 @@ class SendingProcessShow(ctk.CTkFrame):
             4. 프로그레스 바
             5. 전송 상태 표시
             6. detection -> MSGbox -> sending -> MSGbox -> 결과 출력(다른 프레임)
+
+        #! 실질적인 전송 -> shelve 업데이트(상태관리) -> progress bar 업데이트 -> 로그 업데이트
         '''
 
         # frame setting
@@ -191,4 +202,5 @@ class SendingProcessShow(ctk.CTkFrame):
 
 # 메인 함수
 if __name__ == '__main__':
-    App()
+    app = App()
+    app.mainloop()  # 메인 루프 실행
