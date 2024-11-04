@@ -1,0 +1,4 @@
+2024-11-04 22:48:16.513 test_uiautomation.py[21] <module> -> Find Control Timeout(10s): {Name: '파일', ControlType: MenuItemControl}
+2024-11-04 22:48:49.533 test_uiautomation.py[21] <module> -> Find Control Timeout(10s): {Name: '파일', ControlType: MenuItemControl}
+2024-11-04 22:51:03.680 test_uiautomation.py[31] <module> -> Find Control Timeout(10s): {Name: '저장(S)', ControlType: MenuItemControl}
+2024-11-04 22:51:25.190 test_uiautomation.py[31] <module> -> Find Control Timeout(10s): {Name: '저장(S)', ControlType: MenuItemControl}

@@ -1,3 +1,4 @@
+from flask.cli import F
 from settings import *
 from style import *
 
@@ -23,33 +24,48 @@ class App(ctk.CTk):
         # 창 중앙 배치 설정 (디스플레이 스케일링 고려)
         self.geometry(CenterWindowToDisplay(self, 1000, 600, self._get_window_scaling()))
 
-        # 단계별 프레임 생성
-        self.frames = [
-            DailyDetectionShow(self),
-            SendingProcessShow(self),
-            # FinalFrame(self, self.restart)    #! 마지막 프레임: 아직 미구현
-        ]
-
         self.current_frame_index = 0    # 현재 프레임 인덱스. 0부터 시작
+        self.current_frame = None       # 현재 프레임을 저장할 변수
+        
+        self.show_current_frame()       # 첫 번째 프레임 표시
 
-        # 현재 프레임 표시
-        def current_frame_show(self):
-            for frame in self.frames:
-                frame.pack_forget()
-            self.frames[self.current_frame_index].pack(padx=50, pady=50, fill='both', expand=True)
+    # 현재 프레임 표시
+    def show_current_frame(self):
+        # 기존 프레임이 있으면 숨기고 제거
+        if self.current_frame is not None:
+            self.current_frame.pack_forget()
+            self.current_frame.destroy()
 
-        # 다음 프레임으로 이동
-        def next_frame(self):
+        # 현재 프레임 인덱스에 따라 새로운 프레임을 생성합니다.
+        if self.current_frame_index == 0:
+            self.current_frame = DailyDetectionShow(self, self.next_frame)
+        elif self.current_frame_index == 1:
+            self.current_frame = SendingProcessShow(self)
+        elif self.current_frame_index == 2:
+            # self.current_frame = ResultFrame(self, self.restart)
+            #! 여기에 결과 프레임 추가
             pass
 
-        # 이전 프레임으로 이동
-        def previos_frame(self):
-            pass
+        # 새로 생성한 프레임을 표시합니다.
+        if self.current_frame is not None:
+            self.current_frame.pack(padx=50, pady=50, fill="both", expand=True)
+
+    # 다음 프레임으로 이동
+    def next_frame(self):
+        if self.current_frame_index < 2:
+            self.current_frame_index += 1
+            print(f'현재 페이지 인덱스: {self.current_frame_index}')
+            self.show_current_frame()
+
+    # 첫 프레임으로 이동
+    def restart(self):
+        self.current_frame_index = 0
+        self.show_current_frame()
 
         
 
 class DailyDetectionShow(ctk.CTkFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, next_frame_callback):
         super().__init__(master=parent)
         # self['relief'] = 'groove'
         self.file_list_len = 0  # 파일 리스트 길이
@@ -115,11 +131,11 @@ class DailyDetectionShow(ctk.CTkFrame):
             font=('Arial', 20, 'bold'),
             fg_color='green',
             hover_color='darkgreen',
-            command=lambda: print('confirm button clicked')
+            command=next_frame_callback
         )
+
         self.exit_btn.grid(row=3, column=0, sticky='ws', padx=20, pady=20)
         self.confirm_btn.grid(row=3, column=2, sticky='es', padx=0, pady=20)
-
 
 
 
@@ -187,7 +203,7 @@ class SendingProcessShow(ctk.CTkFrame):
         font = ctk.CTkFont(family=FONT, size=MAIN_LABEL_FONT_SIZE)
         self.label = ctk.CTkLabel(self, text='Sending Process', text_color=WHITE, font=font)
         self.label.grid(row=0, column=0)
-        print(f'sending process - label size: {self.label.winfo_geometry()}')
+        # print(f'sending process - label size: {self.label.winfo_geometry()}')
 
         # 프로세스 바
         #! 스레드 사용하여 프로세스 바 업데이트
@@ -198,6 +214,11 @@ class SendingProcessShow(ctk.CTkFrame):
         # 제어 버튼
         #! 사용자가 이상을 감지하고 중지 시킨 경우에 만약 새로 처음부터 보내야한다면, shelve에 있는 파일 제어를 어떻게 할 것인가?
         #! 우선은 예외처리 없이 구현하고, 나중에 예외처리를 추가할 예정
+        
+        def test_code():
+            print('test code')
+
+        test_code()
 
 
 # 메인 함수
