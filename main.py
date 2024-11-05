@@ -1,4 +1,3 @@
-from flask.cli import F
 from settings import *
 from style import *
 
