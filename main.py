@@ -1,3 +1,4 @@
+from numpy import pad
 from settings import *
 from style import *
 
@@ -141,8 +142,8 @@ class DailyDetectionShow(ctk.CTkFrame):
         #! 파일 읽기 및 Treeview 업데이트
         self.read_directory_and_update_treeview('..\\shelve_test', 'daily_files_shelve')
 
-        self.testlabel = ctk.CTkLabel(self, text=f'총 파일 개수: {self.file_list_len}', font=('Arial', 16, 'bold'))
-        self.testlabel.grid(row=1, column=0, sticky='nw', padx=(20, 0))
+        self.daily_info_label = ctk.CTkLabel(self, text=f'총 파일 개수: {self.file_list_len}', font=('Arial', 16, 'bold'))
+        self.daily_info_label.grid(row=1, column=0, sticky='nw', padx=(20, 0))
 
 
     def read_directory_and_update_treeview(self, directory: str, shelve_filename: str):
@@ -204,8 +205,21 @@ class SendingProcessShow(ctk.CTkFrame):
         self.label.grid(row=0, column=0)
         # print(f'sending process - label size: {self.label.winfo_geometry()}')
 
-        # 프로세스 바
-        #! 스레드 사용하여 프로세스 바 업데이트
+        # 프로그레스 바
+        #! 스레드 사용하여 프로그레스 바 업데이트
+
+        # 프로그레스 바 생성
+        self.sending_progress_bar = ctk.CTkProgressBar(
+            master=self,
+            height=45,
+            corner_radius=20,
+            border_width=2,
+            mode='indeterminate',
+            )
+        self.sending_progress_bar.grid(row=1, column=0, columnspan=3, sticky='ew', padx=50, pady=20)
+
+        # 프로그레스 바 테스트용 시작
+        self.sending_progress_bar.start()
         
 
         # 전송 상태 표시
@@ -214,10 +228,6 @@ class SendingProcessShow(ctk.CTkFrame):
         #! 사용자가 이상을 감지하고 중지 시킨 경우에 만약 새로 처음부터 보내야한다면, shelve에 있는 파일 제어를 어떻게 할 것인가?
         #! 우선은 예외처리 없이 구현하고, 나중에 예외처리를 추가할 예정
         
-        def test_code():
-            print('test code')
-
-        test_code()
 
 
 # 메인 함수
