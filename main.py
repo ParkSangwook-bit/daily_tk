@@ -214,7 +214,7 @@ class SendingProcessShow(ctk.CTkFrame):
             height=45,
             corner_radius=20,
             border_width=2,
-            mode='indeterminate',
+            mode='determinate',
             )
         self.sending_progress_bar.grid(row=1, column=0, columnspan=3, sticky='ew', padx=50, pady=20)
 

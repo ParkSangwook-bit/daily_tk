@@ -22,7 +22,7 @@ indeterminate_bar.grid_remove()  # 초기에는 숨겨둠
 # 상태 메시지 라벨
 status_label = ctk.CTkLabel(master=main_frame, text="작업 대기 중...")
 status_label.grid(row=1, column=0, pady=10)
-
+ 
 # 작업 상태 관리 변수
 is_task_running = False
 current_task_index = 0
