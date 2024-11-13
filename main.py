@@ -1,4 +1,3 @@
-from sre_parse import State
 from settings import *
 from style import *
 
@@ -235,13 +234,8 @@ class SendingProcessShow(ctk.CTkFrame):
         self.status_log_txtbox.grid(row=2, column=0, columnspan=3, sticky='nsew', padx=50, pady=20)
         
         self.status_log_txtbox.insert("0.0", "파일 전송 상태 창!...\n")  #! 테스트용 텍스트
-        for i in range(50):
-            self.status_log_txtbox.insert(f"{i+1}.0", f"파일 전송 상태 창... {i+1}\n")  #! 테스트용 텍스트
-            self.status_log_txtbox.update()
-            time.sleep(0.5)
 
-
-
+        # 사용자 입력 방지
         def disable_user_input(event):
             return "break"
         
@@ -249,8 +243,28 @@ class SendingProcessShow(ctk.CTkFrame):
         self.status_log_txtbox.bind("<Button-1>", disable_user_input)  #! 마우스 클릭 방지
 
         # 제어 버튼
+        #? 사용할지 안할지 미정
         #! 사용자가 이상을 감지하고 중지 시킨 경우에 만약 새로 처음부터 보내야한다면, shelve에 있는 파일 제어를 어떻게 할 것인가?
         #! 우선은 예외처리 없이 구현하고, 나중에 예외처리를 추가할 예정
+
+        # self.stop_btn = ctk.CTkButton(
+        #     self,
+        #     text='Stop',
+        #     font=('Arial', 20, 'bold'),
+        #     fg_color='red',
+        #     hover_color='brown',
+        #     # command=self.stop_sending
+        #     )
+        # self.undecided_btn = ctk.CTkButton(
+        #     self,
+        #     text='Undecided',
+        #     font=('Arial', 20, 'bold'),
+        #     fg_color='yellow',
+        #     hover_color='orange',
+        #     # command=self.undecided
+        #     )
+        # self.stop_btn.grid(row=3, column=0, sticky='ws', padx=20, pady=20)
+        # self.undecided_btn.grid(row=3, column=2, sticky='es', padx=20, pady=20)
         
 
 

@@ -1,35 +1,61 @@
-import customtkinter as ctk
+import psutil
+import subprocess
+import time
+import uiautomation as auto
 
-# 메인 윈도우 설정
-root = ctk.CTk()
-root.geometry("600x500")
-root.title("Prevent User Input for CTkTextbox Example")
+'''
+uiautomation을 사용하여 메모장 제어를 테스트해보자.
+이 코드에서는 추상화와 모듈화, 단일 책임원칙을 준수하며 코드를 작성할 것 이다.
+'''
 
-# 메인 프레임 생성
-main_frame = ctk.CTkFrame(master=root)
-main_frame.pack(pady=20, padx=20, fill="both", expand=True)
+#! high level abstraction for controlling notepad
+def ensure_notepad_running():
+    if not is_notepad_running():
+        print("메모장이 실행 중이지 않습니다. 메모장을 실행합니다.")
+        run_notepad()
+        time.sleep(2)
+    else:
+        print("메모장이 이미 실행 중입니다.")
 
-# 텍스트 박스 생성 (로그용)
-textbox = ctk.CTkTextbox(master=main_frame, width=500, height=200)
-textbox.grid(row=0, column=0, pady=10, padx=10)
-textbox.insert("0.0", "작업 상태 창...\n")
-textbox.configure(text_color="white")
+    notepad_window = focus_notepad_window()
+    if notepad_window:
+        print("메모장에 포커스를 맞췄습니다.")
+    else:
+        print("메모장 창을 찾을 수 없습니다.")
 
-# 사용자 입력 차단을 위한 이벤트 가로채기
-def disable_user_input(event):
-    return "break"  # 사용자가 키 입력을 시도할 때 이벤트를 취소하여 입력을 막음
+def write_text_to_notepad(text):
+    notepad_window = focus_notepad_window()
+    if notepad_window:
+        edit_control = notepad_window.EditControl()
+        if edit_control.Exists():
+            edit_control.SendKeys(text)
+            print("텍스트 입력 완료.")
+        else:
+            print("메모장 텍스트 입력란을 찾을 수 없습니다.")
 
-# 키보드와 마우스 입력을 모두 차단
-textbox.bind("<Key>", disable_user_input)     # 키보드 입력 차단
-textbox.bind("<Button-1>", disable_user_input) # 마우스 클릭 입력 차단
+'''
+-------------------------------------------------------------------------------------------
+'''
 
-# 로그 추가 버튼을 사용하여 로그 추가 테스트
-def add_log():
-    textbox.insert("end", "새로운 작업 로그 추가\n")
-    textbox.yview("end")  # 항상 최신 로그가 보이도록 스크롤
+#! medium level abstraction for controlling notepad
+def is_notepad_running():
+    for proc in psutil.process_iter(attrs=['pid', 'name']): # 프로세스 목록 조회
+        if proc.info['name'].lower() == 'notepad.exe':  # 메모장 프로세스가 실행 중인지 확인
+            return True
+        else:
+            return "메모장이 실행 중이지 않습니다."
 
-# 로그 추가 버튼 생성
-add_button = ctk.CTkButton(master=main_frame, text="로그 추가", command=add_log)
-add_button.grid(row=1, column=0, pady=10)
+def run_notepad():
+    subprocess.Popen('notepad.exe', shell=True)  # 메모장 실행
 
-root.mainloop()
+def focus_notepad_window():
+    notepad_window = auto.WindowControl(searchDepth=1, ClassName='Notepad')  # 메모장 창 찾기
+    if notepad_window.Exists():
+        notepad_window.SetFocus()
+        return notepad_window
+    else:
+        return None
+
+if __name__ == "__main__:":
+    ensure_notepad_running()
+    write_text_to_notepad("uiautomation 라이브러리를 사용하여 메모장 자동화를 연습하고 있습니다.\n")
