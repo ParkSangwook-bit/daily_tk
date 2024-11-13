@@ -1,6 +1,8 @@
-from numpy import pad
+from sre_parse import State
 from settings import *
 from style import *
+
+import time
 
 # ctypes 라이브러리를 사용하여 화면 스케일링을 위한 DPI 정보를 가져옴
 def CenterWindowToDisplay(Screen: ctk.CTk, width: int, height: int, scale_factor: float = 1.0):
@@ -90,6 +92,7 @@ class DailyDetectionShow(ctk.CTkFrame):
         # step 정보 라벨 코드는 트리뷰 아래에 있음
 
         # Treeview style
+        # TODO 홀수 짝수 라인 별로 색상 다르게 변경하면 좋을 듯
         self.style = ttk.Style()
         self.style.configure("Treeview", font=('Arial', 16)) # 항목 폰트
         self.style.configure("Treeview.Heading", font=('Arial', 18, 'bold')) # 헤더 폰트
@@ -223,6 +226,27 @@ class SendingProcessShow(ctk.CTkFrame):
         
 
         # 전송 상태 표시
+        self.status_log_txtbox = ctk.CTkTextbox(
+            master=self,
+            width=500,
+            height=300,
+            # State=,
+            )
+        self.status_log_txtbox.grid(row=2, column=0, columnspan=3, sticky='nsew', padx=50, pady=20)
+        
+        self.status_log_txtbox.insert("0.0", "파일 전송 상태 창!...\n")  #! 테스트용 텍스트
+        for i in range(50):
+            self.status_log_txtbox.insert(f"{i+1}.0", f"파일 전송 상태 창... {i+1}\n")  #! 테스트용 텍스트
+            self.status_log_txtbox.update()
+            time.sleep(0.5)
+
+
+
+        def disable_user_input(event):
+            return "break"
+        
+        self.status_log_txtbox.bind("<Key>", disable_user_input)  #! 사용자 키보드 입력 방지
+        self.status_log_txtbox.bind("<Button-1>", disable_user_input)  #! 마우스 클릭 방지
 
         # 제어 버튼
         #! 사용자가 이상을 감지하고 중지 시킨 경우에 만약 새로 처음부터 보내야한다면, shelve에 있는 파일 제어를 어떻게 할 것인가?
