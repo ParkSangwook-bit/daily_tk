@@ -6,56 +6,50 @@ import uiautomation as auto
 '''
 uiautomation을 사용하여 메모장 제어를 테스트해보자.
 이 코드에서는 추상화와 모듈화, 단일 책임원칙을 준수하며 코드를 작성할 것 이다.
+gpt는 이 프로그램에서 탑-다운으로 추상화 과정을 가져서 구조를 구성하는게 올바르다고 했지만, 구현은
+낮은 단계의 추상화 정도를 가지는 함수부터 하라고 하였다.
+
+목적: 이 프로그램은 메모장 프로세스를 감지하여 자동으로 메모장을 실행하여 특정 위치에 있는 txt파일을 여는 것이다.
 '''
 
-#! high level abstraction for controlling notepad
+# high level
+
+# 메모장을 자동으로 감지하고 지정된 파일을 자동으로 여는 함수(전체 플로우)
+def file_as_notepad():
+    ensure_notepad_running()
+    open_file_in_notepad()
+
+# medium level
+
+# 자동으로 메모장을 감지하고 경우에 따라 실행하는 함수
 def ensure_notepad_running():
-    if not is_notepad_running():
-        print("메모장이 실행 중이지 않습니다. 메모장을 실행합니다.")
-        run_notepad()
-        time.sleep(2)
+    if is_notepad_running():
+        pass
     else:
-        print("메모장이 이미 실행 중입니다.")
+        open_notepad()
 
-    notepad_window = focus_notepad_window()
-    if notepad_window:
-        print("메모장에 포커스를 맞췄습니다.")
-    else:
-        print("메모장 창을 찾을 수 없습니다.")
+# 메모장에서 파일을 여는 함수
+def open_file_in_notepad():
+    open_file_using_uiauto()
 
-def write_text_to_notepad(text):
-    notepad_window = focus_notepad_window()
-    if notepad_window:
-        edit_control = notepad_window.EditControl()
-        if edit_control.Exists():
-            edit_control.SendKeys(text)
-            print("텍스트 입력 완료.")
-        else:
-            print("메모장 텍스트 입력란을 찾을 수 없습니다.")
+# low level
 
-'''
--------------------------------------------------------------------------------------------
-'''
-
-#! medium level abstraction for controlling notepad
+# 메모장이 실행중인지 아닌지 검사하는 함수
 def is_notepad_running():
-    for proc in psutil.process_iter(attrs=['pid', 'name']): # 프로세스 목록 조회
-        if proc.info['name'].lower() == 'notepad.exe':  # 메모장 프로세스가 실행 중인지 확인
+    for proc in psutil.process_iter(attrs=['pid', 'name']):
+        if proc.info['name'].lower() == 'notepad.exe':
             return True
         else:
-            return "메모장이 실행 중이지 않습니다."
+            return False
 
-def run_notepad():
-    subprocess.Popen('notepad.exe', shell=True)  # 메모장 실행
+# 메모장을 실행하는 함수
+def open_notepad():
+    subprocess.Popen('notepad.exe', shell=True)
 
-def focus_notepad_window():
-    notepad_window = auto.WindowControl(searchDepth=1, ClassName='Notepad')  # 메모장 창 찾기
-    if notepad_window.Exists():
-        notepad_window.SetFocus()
-        return notepad_window
-    else:
-        return None
+# uiautomation을 이용하여 메모장에서 파일을 불러오는 동작을 하는 함수
+def open_file_using_uiauto():
+    pass
+   
 
-if __name__ == "__main__:":
-    ensure_notepad_running()
-    write_text_to_notepad("uiautomation 라이브러리를 사용하여 메모장 자동화를 연습하고 있습니다.\n")
+if __name__ == "__main__":
+    file_as_notepad()
