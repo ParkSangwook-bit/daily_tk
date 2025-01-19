@@ -136,7 +136,7 @@ if __name__ == "__main__":
                     print("검색창 열기")
 
                     # 2. 검색창에 특정 친구 이름 입력 후 엔터
-                    auto.SendKeys(friend_name, interval=0.05)  # 글자 하나씩 입력
+                    auto.SendKeys(friend_name, interval=0.01)  # 글자 하나씩 입력
                     time.sleep(0.2)
                     auto.SendKeys('{ENTER}')
                     time.sleep(0.2)
@@ -165,7 +165,7 @@ if __name__ == "__main__":
                     auto.SendKeys('{Ctrl}l')
                     time.sleep(0.2)
                     # 디렉토리 경로 예시 입력 (가상)
-                    auto.SendKeys(r'C:\Users\qkrtk\Desktop\shelve_test', interval=0.05)
+                    auto.SendKeys(r'C:\Users\qkrtk\Desktop\shelve_test', interval=0.01)
                     time.sleep(0.2)
                     auto.SendKeys('{ENTER}')
                     time.sleep(0.2)
@@ -176,7 +176,8 @@ if __name__ == "__main__":
                     auto.SendKeys('{Alt}n')  # ALT+N
                     time.sleep(0.2)
                     auto.SendKeys('icon_14.png', interval=0.05)                    
-                    auto.SendKeys('{Alt}o')  # ALT+O
+                    # auto.SendKeys('{Alt}o')  # ALT+O
+                    auto.SendKeys('{esc}')  # ESC
                     time.sleep(0.2)
 
                     # 8. 파일 전송 확인창 감지 후 상호작용(엔터)
