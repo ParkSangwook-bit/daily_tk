@@ -1,5 +1,6 @@
 from settings import *
 from style import *
+import kakao_control
 
 import time
 
