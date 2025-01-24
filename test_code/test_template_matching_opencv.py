@@ -1,4 +1,5 @@
 import cv2
+import numpy as np
 import time
 
 def load_image(image_path):
@@ -43,6 +44,16 @@ def match_template(main_image, template, threshold=0.8, max_attempts=3):
 
     print("템플릿 매칭 3회 시도 후 실패.")
     return False, None, None
+
+def convert_pillow_to_opencv(image):
+    """
+    Pillow 이미지를 OpenCV에서 사용할 수 있는 NumPy 배열로 변환.
+    """
+    # Pillow 이미지를 NumPy 배열로 변환
+    np_image = np.array(image)
+    # OpenCV는 BGR 순서를 사용하므로 RGB -> BGR로 변환
+    opencv_image = cv2.cvtColor(np_image, cv2.COLOR_RGB2BGR)
+    return opencv_image
 
 def draw_rectangle(image, top_left, bottom_right):
     """매칭된 영역 표시"""

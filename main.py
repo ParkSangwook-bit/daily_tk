@@ -1,8 +1,7 @@
 from settings import *
 from style import *
-import kakao_control
 
-import time
+from sending_proccess import *
 
 # ctypes 라이브러리를 사용하여 화면 스케일링을 위한 DPI 정보를 가져옴
 def CenterWindowToDisplay(Screen: ctk.CTk, width: int, height: int, scale_factor: float = 1.0):
@@ -94,8 +93,8 @@ class DailyDetectionShow(ctk.CTkFrame):
         # Treeview style
         # TODO 홀수 짝수 라인 별로 색상 다르게 변경하면 좋을 듯
         self.style = ttk.Style()
-        self.style.configure("Treeview", font=('Arial', 16)) # 항목 폰트
-        self.style.configure("Treeview.Heading", font=('Arial', 18, 'bold')) # 헤더 폰트
+        self.style.configure("Treeview", font=('Arial', 12)) # 항목 폰트
+        self.style.configure("Treeview.Heading", font=('Arial', 14, 'bold')) # 헤더 폰트
         # treeview
         self.file_tree = ttk.Treeview(self, columns=('name', 'status'), show='headings', height=30)
         # 헤더 설정
@@ -141,14 +140,14 @@ class DailyDetectionShow(ctk.CTkFrame):
         self.confirm_btn.grid(row=3, column=2, sticky='es', padx=0, pady=20)
 
 
-
+        # TODO shelve 제어 항목 분리 필요
         #! 파일 읽기 및 Treeview 업데이트
         self.read_directory_and_update_treeview('..\\shelve_test', 'daily_files_shelve')
 
         self.daily_info_label = ctk.CTkLabel(self, text=f'총 파일 개수: {self.file_list_len}', font=('Arial', 16, 'bold'))
         self.daily_info_label.grid(row=1, column=0, sticky='nw', padx=(20, 0))
 
-
+    # TODO shelve 제어 항목 분리 필요
     def read_directory_and_update_treeview(self, directory: str, shelve_filename: str):
         """
         지정된 디렉토리에서 파일 정보를 읽고 Shelve에 저장한 후 Treeview에 표시
@@ -175,25 +174,77 @@ class DailyDetectionShow(ctk.CTkFrame):
                 file_info = db[key]
                 self.file_tree.insert("", "end", values=(file_info["파일명"], f"{file_info['크기']} bytes", file_info["수정 날짜"], file_info["전송 상태"]))
 
+# class SendingProcessShow(ctk.CTkFrame):
+#     def __init__(self, parent):
+#         super().__init__(master=parent)
+
+#         # frame setting
+#         self.grid(column=0, row=0, sticky='nsew', padx=50, pady=50)
+
+#         # layout
+#         # 4x3 그리드
+#         self.rowconfigure(0, weight=1, uniform='b')
+#         self.rowconfigure(1, weight=2, uniform='b')
+#         self.rowconfigure(2, weight=8, uniform='b')
+#         self.rowconfigure(3, weight=2, uniform='b')
+#         self.columnconfigure(0, weight=1, uniform='b')
+#         self.columnconfigure(1, weight=1, uniform='b')
+#         self.columnconfigure(2, weight=1, uniform='b')
+
+#         # step 설명 라벨
+#         font = ctk.CTkFont(family=FONT, size=MAIN_LABEL_FONT_SIZE)
+#         self.label = ctk.CTkLabel(self, text='Sending Process', text_color=WHITE, font=font)
+#         self.label.grid(row=0, column=0)
+#         # print(f'sending process - label size: {self.label.winfo_geometry()}')
+
+#         # 프로그레스 바
+#         #! 스레드 사용하여 프로그레스 바 업데이트
+
+#         # 프로그레스 바 생성
+#         self.sending_progress_bar = ctk.CTkProgressBar(
+#             master=self,
+#             height=45,
+#             corner_radius=20,
+#             border_width=2,
+#             mode='determinate',
+#             )
+#         self.sending_progress_bar.grid(row=1, column=0, columnspan=3, sticky='ew', padx=50, pady=20)
+
+#         # 프로그레스 바 테스트용 시작
+#         self.sending_progress_bar.start()
+        
+
+#         # 전송 상태 표시
+#         self.status_log_txtbox = ctk.CTkTextbox(
+#             master=self,
+#             width=500,
+#             height=300,
+#             # State=,
+#             )
+#         self.status_log_txtbox.grid(row=2, column=0, columnspan=3, sticky='nsew', padx=50, pady=20)
+        
+#         self.status_log_txtbox.insert("0.0", "파일 전송 상태 창!...\n")  #! 테스트용 텍스트
+
+#         # 사용자 입력 방지
+#         def disable_user_input(event):
+#             return "break"
+        
+#         self.status_log_txtbox.bind("<Key>", disable_user_input)  #! 사용자 키보드 입력 방지
+#         self.status_log_txtbox.bind("<Button-1>", disable_user_input)  #! 마우스 클릭 방지
+
+#         # 제어 버튼
+#         #? 사용할지 안할지 미정
+#         #! 사용자가 이상을 감지하고 중지 시킨 경우에 만약 새로 처음부터 보내야한다면, shelve에 있는 파일 제어를 어떻게 할 것인가?
+#         #! 우선은 예외처리 없이 구현하고, 나중에 예외처리를 추가할 예정
+
+
+
 class SendingProcessShow(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(master=parent)
-        ''' TODO
-        1. 프레임 생성
-        2. 프레임 레이아웃 설정
-        3. 프레임 내용 설정
-            4. 프로그레스 바
-            5. 전송 상태 표시
-            6. detection -> MSGbox -> sending -> MSGbox -> 결과 출력(다른 프레임)
-
-        #! 실질적인 전송 -> shelve 업데이트(상태관리) -> progress bar 업데이트 -> 로그 업데이트
-        '''
-
-        # frame setting
         self.grid(column=0, row=0, sticky='nsew', padx=50, pady=50)
 
-        # layout
-        # 4x3 그리드
+        # --- 기존 레이아웃 설정 (ProgressBar, Textbox 등) ---
         self.rowconfigure(0, weight=1, uniform='b')
         self.rowconfigure(1, weight=2, uniform='b')
         self.rowconfigure(2, weight=8, uniform='b')
@@ -202,71 +253,144 @@ class SendingProcessShow(ctk.CTkFrame):
         self.columnconfigure(1, weight=1, uniform='b')
         self.columnconfigure(2, weight=1, uniform='b')
 
-        # step 설명 라벨
         font = ctk.CTkFont(family=FONT, size=MAIN_LABEL_FONT_SIZE)
         self.label = ctk.CTkLabel(self, text='Sending Process', text_color=WHITE, font=font)
         self.label.grid(row=0, column=0)
-        # print(f'sending process - label size: {self.label.winfo_geometry()}')
 
         # 프로그레스 바
-        #! 스레드 사용하여 프로그레스 바 업데이트
-
-        # 프로그레스 바 생성
         self.sending_progress_bar = ctk.CTkProgressBar(
             master=self,
             height=45,
             corner_radius=20,
             border_width=2,
             mode='determinate',
-            )
+        )
         self.sending_progress_bar.grid(row=1, column=0, columnspan=3, sticky='ew', padx=50, pady=20)
-
-        # 프로그레스 바 테스트용 시작
         self.sending_progress_bar.start()
-        
 
-        # 전송 상태 표시
+        # 전송 상태 표시 (로그 박스)
         self.status_log_txtbox = ctk.CTkTextbox(
             master=self,
             width=500,
             height=300,
-            # State=,
-            )
+        )
         self.status_log_txtbox.grid(row=2, column=0, columnspan=3, sticky='nsew', padx=50, pady=20)
-        
-        self.status_log_txtbox.insert("0.0", "파일 전송 상태 창!...\n")  #! 테스트용 텍스트
+        self.status_log_txtbox.insert("0.0", "파일 전송 상태 창!...\n")
 
         # 사용자 입력 방지
         def disable_user_input(event):
             return "break"
-        
-        self.status_log_txtbox.bind("<Key>", disable_user_input)  #! 사용자 키보드 입력 방지
-        self.status_log_txtbox.bind("<Button-1>", disable_user_input)  #! 마우스 클릭 방지
+        self.status_log_txtbox.bind("<Key>", disable_user_input)  
+        self.status_log_txtbox.bind("<Button-1>", disable_user_input)
 
-        # 제어 버튼
-        #? 사용할지 안할지 미정
-        #! 사용자가 이상을 감지하고 중지 시킨 경우에 만약 새로 처음부터 보내야한다면, shelve에 있는 파일 제어를 어떻게 할 것인가?
-        #! 우선은 예외처리 없이 구현하고, 나중에 예외처리를 추가할 예정
+        # "전송 시작" 버튼 추가
+        self.start_button = ctk.CTkButton(
+            self,
+            text='전송 시작',
+            font=('Arial', 20, 'bold'),
+            fg_color='green',
+            hover_color='darkgreen',
+            command=self.start_sending_process
+        )
+        self.start_button.grid(row=3, column=2, sticky='es', padx=20, pady=20)
 
-        # self.stop_btn = ctk.CTkButton(
-        #     self,
-        #     text='Stop',
-        #     font=('Arial', 20, 'bold'),
-        #     fg_color='red',
-        #     hover_color='brown',
-        #     # command=self.stop_sending
-        #     )
-        # self.undecided_btn = ctk.CTkButton(
-        #     self,
-        #     text='Undecided',
-        #     font=('Arial', 20, 'bold'),
-        #     fg_color='yellow',
-        #     hover_color='orange',
-        #     # command=self.undecided
-        #     )
-        # self.stop_btn.grid(row=3, column=0, sticky='ws', padx=20, pady=20)
-        # self.undecided_btn.grid(row=3, column=2, sticky='es', padx=20, pady=20)
-        
+        # Queue & 주기적 폴링
+        self.log_queue = queue.Queue()
+        self.after(200, self.poll_queue)
+
+    def start_sending_process(self):
+        """
+        사용자가 '전송 시작' 버튼을 클릭하면 호출됨.
+        별도 스레드에서 shelve -> uia -> opencv 로직을 실행.
+        """
+        self.log_queue.put(("log", "[Main] 전송 시작 버튼 클릭"))
+        self.start_button.configure(state="disabled")  # 중복 클릭 방지
+        self.current_progress = 0
+        self.sending_progress_bar.set(0)  # 0% 초기화
+
+        # 작업 스레드 생성
+        worker_thread = threading.Thread(target=self.send_files_worker, args=(self.log_queue,))
+        worker_thread.daemon = True
+        worker_thread.start()
+
+    def send_files_worker(self, log_queue):
+        """
+        백그라운드 스레드에서 실행될 전송 로직:
+        1. shelve에서 '미전송' 파일 목록 가져오기
+        2. uiautomation으로 카카오톡 열기 & 파일 전송
+        3. ROI 캡처 + opencv 매칭
+        4. shelve 업데이트
+        5. 진행 상황을 log_queue에 put()하여 UI 표시
+        """
+        try:
+            # (1) 미전송 파일 목록 불러오기
+            with shelve.open("daily_files_shelve") as db:
+                keys = [k for k in db.keys() if db[k].get("전송 상태") == "미전송"]
+            
+            total_files = len(keys)
+            log_queue.put(("log", f"[Worker] 미전송 파일 {total_files}개 발견."))
+
+            # uia: 카카오 실행 + 활성화
+            ensure_kakao_running()
+            time.sleep(1)
+            kakao_window = activate_kakao_window()
+            time.sleep(1)
+
+            processed_count = 0
+
+            for filename in keys:
+                # 파일 정보 가져오기
+                with shelve.open("daily_files_shelve", writeback=True) as db:
+                    file_info = db[filename]
+
+                log_queue.put(("log", f"[Worker] '{filename}' 전송 시도중..."))
+
+                # (2) uia 부분 (간단 예시 - 실제 로직 대체)
+                # ex) search_friend, attach_file, etc.
+                time.sleep(2)  # 더미 대기
+                # ROI 캡처 + opencv (또는 그냥 더미 결과)
+                # (ROI 예시)
+                # roi_image = capture_roi(kakao_window) # 별도 함수 구현
+                # result = detect_status(roi_image, templates_dict)
+                result = "성공"  # 일단 더미
+                time.sleep(1)
+
+                # (4) shelve 업데이트
+                with shelve.open("daily_files_shelve", writeback=True) as db:
+                    file_info = db[filename]
+                    file_info["전송 상태"] = result
+                    db[filename] = file_info
+
+                log_queue.put(("log", f"[Worker] '{filename}' => {result}"))
+
+                # Progress 갱신
+                processed_count += 1
+                progress_ratio = processed_count / total_files
+                log_queue.put(("progress", progress_ratio))
+
+            log_queue.put(("done", "모든 파일 전송 작업이 완료되었습니다."))
+
+        except Exception as e:
+            log_queue.put(("log", f"[에러] {str(e)}"))
+            log_queue.put(("done", "작업 중단 (에러 발생)"))
+
+    def poll_queue(self):
+        """
+        주기적으로 Queue를 확인하여 로그창과 ProgressBar를 업데이트.
+        """
+        while not self.log_queue.empty():
+            msg_type, msg_content = self.log_queue.get()
+            if msg_type == "log":
+                self.status_log_txtbox.insert("end", msg_content + "\n")
+            elif msg_type == "progress":
+                # msg_content를 0~1 사이 값으로 가정
+                self.sending_progress_bar.set(msg_content)
+            elif msg_type == "done":
+                self.status_log_txtbox.insert("end", msg_content + "\n")
+                self.start_button.configure(state="normal")
+
+        self.after(200, self.poll_queue)
+
 
 
 # 메인 함수
