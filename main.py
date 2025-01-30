@@ -2,6 +2,7 @@ from settings import *
 from style import *
 
 from sending_proccess import *
+from shelve_manager import *
 
 # ctypes 라이브러리를 사용하여 화면 스케일링을 위한 DPI 정보를 가져옴
 def CenterWindowToDisplay(Screen: ctk.CTk, width: int, height: int, scale_factor: float = 1.0):
@@ -93,15 +94,20 @@ class DailyDetectionShow(ctk.CTkFrame):
         # Treeview style
         # TODO 홀수 짝수 라인 별로 색상 다르게 변경하면 좋을 듯
         self.style = ttk.Style()
-        self.style.configure("Treeview", font=('Arial', 12)) # 항목 폰트
-        self.style.configure("Treeview.Heading", font=('Arial', 14, 'bold')) # 헤더 폰트
+        # self.style.configure("Treeview", font=('Arial', 12)) # 항목 폰트
+        # self.style.configure("Treeview.Heading", font=('Arial', 14, 'bold')) # 헤더 폰트
+        
         # treeview
-        self.file_tree = ttk.Treeview(self, columns=('name', 'status'), show='headings', height=30)
+        self.file_tree = ttk.Treeview(self, columns=('name', 'size', 'modified_date', 'status'), show='headings', height=30)
         # 헤더 설정
         self.file_tree.heading('name', text='name', anchor='w')
+        self.file_tree.heading('size', text='size', anchor='w')
+        self.file_tree.heading('modified_date', text='modified_date', anchor='w')
         self.file_tree.heading('status', text='status', anchor='w')
         # 컬럼 설정
         self.file_tree.column('name', anchor='w')
+        self.file_tree.column('size', anchor='w')
+        self.file_tree.column('modified_date', anchor='w')
         self.file_tree.column('status', anchor='e')
        
         # grid 배치
@@ -142,37 +148,38 @@ class DailyDetectionShow(ctk.CTkFrame):
 
         # TODO shelve 제어 항목 분리 필요
         #! 파일 읽기 및 Treeview 업데이트
-        self.read_directory_and_update_treeview('..\\shelve_test', 'daily_files_shelve')
-
         self.daily_info_label = ctk.CTkLabel(self, text=f'총 파일 개수: {self.file_list_len}', font=('Arial', 16, 'bold'))
         self.daily_info_label.grid(row=1, column=0, sticky='nw', padx=(20, 0))
+        
+        self.read_directory_and_update_treeview('..\\shelve_test', 'daily_files_shelve')
 
-    # TODO shelve 제어 항목 분리 필요
     def read_directory_and_update_treeview(self, directory: str, shelve_filename: str):
         """
-        지정된 디렉토리에서 파일 정보를 읽고 Shelve에 저장한 후 Treeview에 표시
+        지정된 디렉토리에서 파일 정보를 읽어 shelve에 저장한 후,
+        Treeview에 표시
         """
-        # Shelve에 파일 정보 저장
-        with shelve.open(shelve_filename) as db:
-            for filename in os.listdir(directory):
-                filepath = os.path.join(directory, filename)
-                if os.path.isfile(filepath) and filename.endswith(".png"):
-                    file_info = {
-                        "파일명": filename,
-                        "크기": os.path.getsize(filepath),
-                        "수정 날짜": datetime.fromtimestamp(os.path.getmtime(filepath)).strftime('%Y-%m-%d %H:%M:%S'),
-                        "전송 상태": "미전송"
-                    }
-                    db[filename] = file_info
-                #! print(f"{file_info['파일명']} : {file_info['전송 상태']} / {file_info['수정 날짜']}")
-                self.file_list_len += 1
-        #! print(f"Total {file_list_len} files are saved in shelve file")
+        # 1) 디렉토리 내 .png 파일을 shelve에 저장
+        # from shelve_manager import store_png_files_in_shelve, load_all_files_from_shelve
 
-        # Treeview 업데이트
-        with shelve.open(shelve_filename) as db:
-            for key in db:
-                file_info = db[key]
-                self.file_tree.insert("", "end", values=(file_info["파일명"], f"{file_info['크기']} bytes", file_info["수정 날짜"], file_info["전송 상태"]))
+        stored_count = store_png_files_in_shelve(directory, shelve_filename)
+        print(f"{stored_count}개의 .png 파일을 shelve에 저장했습니다.")
+
+        # 2) shelve로부터 모든 파일 정보를 불러와 Treeview에 삽입
+        file_info_list = load_all_files_from_shelve(shelve_filename)
+        for file_info in file_info_list:
+            filename = file_info["파일명"]
+            size_bytes = file_info["크기"]
+            mod_date = file_info["수정 날짜"]
+            status = file_info["전송 상태"]
+
+            # Treeview 삽입
+            self.file_tree.insert("", "end", values=(filename, f"{size_bytes} bytes", mod_date, status))
+            self.file_list_len += 1
+            print(file_info)
+
+        # 혹은 self.daily_info_label 등의 UI 요소에도 추가 반영
+        self.daily_info_label.configure(text=f"총 파일 개수: {self.file_list_len}")
+
 
 # class SendingProcessShow(ctk.CTkFrame):
 #     def __init__(self, parent):

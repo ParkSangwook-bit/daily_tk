@@ -123,6 +123,7 @@ if __name__ == "__main__":
                 #     실제 구현 시 "daily_files_shelve" 등에서 "미전송" 상태인 파일들의
                 #     "학부모" 이름을 꺼내오는 식으로 확장 가능합니다.
                 
+                #! 여기 아직 더미임
                 dummy_shelve_path = 'dummy_friends_shelve'
                 print("쉘브 불러왔음")
                 # shelve 예시 생성 (처음 한 번만)
@@ -189,8 +190,6 @@ if __name__ == "__main__":
                     time.sleep(0.2)
 
                     # 8. 파일 전송 확인창 감지 후 상호작용(엔터)
-                    #    실제로는 대화상자가 뜨면 auto.WindowControl(...)로 확인하거나,
-                    #    단순히 Enter 한 번 보내도 될 수도 있습니다.
                     auto.SendKeys('{ENTER}')
                     time.sleep(0.2)
 
