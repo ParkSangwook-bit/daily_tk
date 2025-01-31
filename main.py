@@ -64,8 +64,7 @@ class App(ctk.CTk):
         self.current_frame_index = 0
         self.show_current_frame()
 
-        
-
+# 데일리 감지 및 Treeview 표시 프레임
 class DailyDetectionShow(ctk.CTkFrame):
     def __init__(self, parent, next_frame_callback):
         super().__init__(master=parent)
@@ -113,7 +112,6 @@ class DailyDetectionShow(ctk.CTkFrame):
         # grid 배치
         self.file_tree.grid(row=2, column=0, columnspan = 3, sticky='nsew', padx=(30, 0))
         
-
         # 전체 Treeview 너비 비율 조정 (열 너비 비중 설정)
         total_columns_weight = 10  # 전체 비율 합계
         self.file_tree.column('name', width=int(0.7 * total_columns_weight), stretch=True)  # 70% 비율
@@ -145,8 +143,6 @@ class DailyDetectionShow(ctk.CTkFrame):
         self.exit_btn.grid(row=3, column=0, sticky='ws', padx=20, pady=20)
         self.confirm_btn.grid(row=3, column=2, sticky='es', padx=0, pady=20)
 
-
-        # TODO shelve 제어 항목 분리 필요
         #! 파일 읽기 및 Treeview 업데이트
         self.daily_info_label = ctk.CTkLabel(self, text=f'총 파일 개수: {self.file_list_len}', font=('Arial', 16, 'bold'))
         self.daily_info_label.grid(row=1, column=0, sticky='nw', padx=(20, 0))
@@ -159,7 +155,6 @@ class DailyDetectionShow(ctk.CTkFrame):
         Treeview에 표시
         """
         # 1) 디렉토리 내 .png 파일을 shelve에 저장
-        # from shelve_manager import store_png_files_in_shelve, load_all_files_from_shelve
 
         stored_count = store_png_files_in_shelve(directory, shelve_filename)
         print(f"{stored_count}개의 .png 파일을 shelve에 저장했습니다.")
@@ -175,77 +170,12 @@ class DailyDetectionShow(ctk.CTkFrame):
             # Treeview 삽입
             self.file_tree.insert("", "end", values=(filename, f"{size_bytes} bytes", mod_date, status))
             self.file_list_len += 1
-            print(file_info)
+            #! 디버그용 print(file_info)
 
         # 혹은 self.daily_info_label 등의 UI 요소에도 추가 반영
         self.daily_info_label.configure(text=f"총 파일 개수: {self.file_list_len}")
 
-
-# class SendingProcessShow(ctk.CTkFrame):
-#     def __init__(self, parent):
-#         super().__init__(master=parent)
-
-#         # frame setting
-#         self.grid(column=0, row=0, sticky='nsew', padx=50, pady=50)
-
-#         # layout
-#         # 4x3 그리드
-#         self.rowconfigure(0, weight=1, uniform='b')
-#         self.rowconfigure(1, weight=2, uniform='b')
-#         self.rowconfigure(2, weight=8, uniform='b')
-#         self.rowconfigure(3, weight=2, uniform='b')
-#         self.columnconfigure(0, weight=1, uniform='b')
-#         self.columnconfigure(1, weight=1, uniform='b')
-#         self.columnconfigure(2, weight=1, uniform='b')
-
-#         # step 설명 라벨
-#         font = ctk.CTkFont(family=FONT, size=MAIN_LABEL_FONT_SIZE)
-#         self.label = ctk.CTkLabel(self, text='Sending Process', text_color=WHITE, font=font)
-#         self.label.grid(row=0, column=0)
-#         # print(f'sending process - label size: {self.label.winfo_geometry()}')
-
-#         # 프로그레스 바
-#         #! 스레드 사용하여 프로그레스 바 업데이트
-
-#         # 프로그레스 바 생성
-#         self.sending_progress_bar = ctk.CTkProgressBar(
-#             master=self,
-#             height=45,
-#             corner_radius=20,
-#             border_width=2,
-#             mode='determinate',
-#             )
-#         self.sending_progress_bar.grid(row=1, column=0, columnspan=3, sticky='ew', padx=50, pady=20)
-
-#         # 프로그레스 바 테스트용 시작
-#         self.sending_progress_bar.start()
-        
-
-#         # 전송 상태 표시
-#         self.status_log_txtbox = ctk.CTkTextbox(
-#             master=self,
-#             width=500,
-#             height=300,
-#             # State=,
-#             )
-#         self.status_log_txtbox.grid(row=2, column=0, columnspan=3, sticky='nsew', padx=50, pady=20)
-        
-#         self.status_log_txtbox.insert("0.0", "파일 전송 상태 창!...\n")  #! 테스트용 텍스트
-
-#         # 사용자 입력 방지
-#         def disable_user_input(event):
-#             return "break"
-        
-#         self.status_log_txtbox.bind("<Key>", disable_user_input)  #! 사용자 키보드 입력 방지
-#         self.status_log_txtbox.bind("<Button-1>", disable_user_input)  #! 마우스 클릭 방지
-
-#         # 제어 버튼
-#         #? 사용할지 안할지 미정
-#         #! 사용자가 이상을 감지하고 중지 시킨 경우에 만약 새로 처음부터 보내야한다면, shelve에 있는 파일 제어를 어떻게 할 것인가?
-#         #! 우선은 예외처리 없이 구현하고, 나중에 예외처리를 추가할 예정
-
-
-
+# 전송 및 전송 과정 표시 프레임
 class SendingProcessShow(ctk.CTkFrame):
     def __init__(self, parent):
         super().__init__(master=parent)
@@ -320,6 +250,7 @@ class SendingProcessShow(ctk.CTkFrame):
         worker_thread.daemon = True
         worker_thread.start()
 
+    #! 리팩토링 필요
     def send_files_worker(self, log_queue):
         """
         백그라운드 스레드에서 실행될 전송 로직:
