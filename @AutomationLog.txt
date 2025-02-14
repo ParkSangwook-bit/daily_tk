@@ -1,6 +1,15 @@
-2024-11-04 22:48:16.513 test_uiautomation.py[21] <module> -> Find Control Timeout(10s): {Name: '파일', ControlType: MenuItemControl}
-2024-11-04 22:48:49.533 test_uiautomation.py[21] <module> -> Find Control Timeout(10s): {Name: '파일', ControlType: MenuItemControl}
-2024-11-04 22:51:03.680 test_uiautomation.py[31] <module> -> Find Control Timeout(10s): {Name: '저장(S)', ControlType: MenuItemControl}
-2024-11-04 22:51:25.190 test_uiautomation.py[31] <module> -> Find Control Timeout(10s): {Name: '저장(S)', ControlType: MenuItemControl}
-2024-11-05 17:07:16.055 test_uiautomation.py[15] <module> -> Find Control Timeout(10s): {Name: '친구', ControlType: MenuItemControl}
-2024-11-05 17:07:46.354 test_uiautomation.py[15] <module> -> Find Control Timeout(10s): {Name: '친구', ControlType: MenuItemControl}
+
+[WinError -2147221008] CoInitialize가 호출되지 않았습니다
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+[WinError -2147221008] CoInitialize가 호출되지 않았습니다
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py
+
+[WinError -2147221008] CoInitialize가 호출되지 않았습니다
+Can not load UIAutomationCore.dll.
+1, You may need to install Windows Update KB971513 if your OS is Windows XP, see https://github.com/yinkaisheng/WindowsUpdateKB971513ForIUIAutomation
+2, You need to use an UIAutomationInitializerInThread object if use uiautomation in a thread, see demos/uiautomation_in_thread.py

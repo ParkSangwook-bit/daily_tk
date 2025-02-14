@@ -1,4 +1,4 @@
-from settings import shelve, time, os, datetime
+from settings import shelve, os, datetime
 from kakao_control import *
 
 # TODO CRUD 구현
@@ -95,13 +95,32 @@ from kakao_control import *
         
 
 #-----------------------------------------------------------------------------------
-# initialize
+
+def extract_student_name(filename: str) -> str:
+    """
+    파일명에서 학생이름 추출
+    예) '20250124_홍길동2_영어.png' -> '홍길동2'
+    규칙: '{YYYYMMDD}_{이름}_{과목}.png'
+    """
+    name_no_ext = os.path.splitext(filename)[0]  # 예: '20250124_홍길동2_영어'
+    parts = name_no_ext.split('_')               # ['20250124', '홍길동2', '영어']
+    if len(parts) >= 2: # 과목이 없을 수도 있음
+        return parts[1]  # 두 번째 요소(홍길동2)가 "학생이름"으로 가정
+    else:
+        #! 규칙에 맞지 않으면 파일 이름이 잘못된 것을 의심
+        # TODO 규칙에 맞지 않으면 빈 문자열 등 처리 | 아직 명확한 처리법 없음
+        return ""
+
 def store_png_files_in_shelve(directory: str, shelve_filename: str) -> int:
     """
     지정된 디렉토리에서 .png 파일 정보를 읽고,
     shelve 파일에 {"파일명": file_info} 형태로 저장.
+    (이미 존재하는 파일이면 상태를 포함한 정보 변경 없이 패스)
 
-    file_info 예시 구조:
+    추가로, 'student_names'라는 set/list 키를 두어,
+    'extract_student_name(filename)' 결과도 중복 없이 관리.
+
+    file_info 예시:
     {
       "파일명": filename,
       "크기": ...,
@@ -110,47 +129,84 @@ def store_png_files_in_shelve(directory: str, shelve_filename: str) -> int:
     }
 
     Returns:
-        파일로 등록된 개수(int)
+        새로 등록된 파일 개수(int)
     """
     stored_count = 0
-    with shelve.open(shelve_filename) as db:
+    with shelve.open(shelve_filename, writeback=True) as db:
+        # 만약 student_names가 없으면 초기화
+        
+        # for key, value in db.items():
+        #     print(f"key = {key}, value = {value}")
+        students = db["student_names"]
+        
+        for name in students:
+            print(f"name = {name}")
+               
+        if "student_names" not in db:
+            db["student_names"] = set()  # set으로 중복 방지
+
+        student_names_set = db["student_names"]
+
         for filename in os.listdir(directory):
             filepath = os.path.join(directory, filename)
+            # 1) .png 파일인지?
             if os.path.isfile(filepath) and filename.lower().endswith(".png"):
-                file_info = {
-                    "파일명": filename,
-                    "크기": os.path.getsize(filepath),
-                    "수정 날짜": datetime.fromtimestamp(os.path.getmtime(filepath)).strftime('%Y-%m-%d %H:%M'),
-                    "전송 상태": "미전송"
-                }
-                db[filename] = file_info
-                stored_count += 1
+                # 2) shelve에 이미 존재하는 파일명인가?
+                if filename not in db:
+                    # 새 파일만 "미전송" 등록
+                    file_info = {
+                        "파일명": filename,
+                        "크기": os.path.getsize(filepath),
+                        "수정 날짜": datetime.fromtimestamp(os.path.getmtime(filepath)).strftime('%Y-%m-%d %H:%M'),
+                        "전송 상태": "미전송"
+                    }
+                    db[filename] = file_info
+                    stored_count += 1
+
+                # 학생 이름 추출 후 student_names에 추가
+                name = extract_student_name(filename)
+                if name:
+                    student_names_set.add(name)
+
+        # writeback=True 이므로, 수정한 student_names_set도 자동 반영 
+        db["student_names"] = student_names_set
+
     return stored_count
 
 def load_all_files_from_shelve(shelve_filename: str) -> list:
     """
     shelve에서 모든 파일 정보를 불러옴.
-
     Returns:
-        [file_info, file_info, ...] 형태의 리스트
+        [file_info, file_info, ...]
         각 file_info는 딕셔너리 구조.
     """
     file_info_list = []
     with shelve.open(shelve_filename) as db:
         for key in db:
-            file_info_list.append(db[key])
+            # student_names 등 다른 키 제외, 파일명만 file_info라 가정
+            if isinstance(db[key], dict) and "파일명" in db[key]:
+                file_info_list.append(db[key])
     return file_info_list
 
 def load_file_info(shelve_filename: str, filename: str) -> dict:
     """
     특정 파일(filename)에 대한 file_info를 반환.
-    없으면 None.
+    없으면 빈 dict
     """
     with shelve.open(shelve_filename) as db:
         if filename in db:
             return db[filename]
         else:
-            return {}   # 빈 형식
+            return {}
+
+def get_student_names(shelve_filename: str) -> list:
+    """
+    shelve에서 'student_names'를 불러와 list로 반환
+    """
+    with shelve.open(shelve_filename) as db:
+        names_struct = db.get("student_names", set())
+        # 만약 set 대신 list를 쓴다면, 여기서 sorted(...) 가능
+        return sorted(names_struct)
 
 def update_file_status(shelve_filename: str, filename: str, new_status: str) -> None:
     """
@@ -160,15 +216,41 @@ def update_file_status(shelve_filename: str, filename: str, new_status: str) -> 
         if filename in db:
             db[filename]["전송 상태"] = new_status
 
-def get_pending_files(shelve_filename: str) -> list:
+def get_pending_file_names(shelve_filename: str) -> list:
     """
     '미전송' 상태인 파일 목록(파일명)을 반환.
-    Returns:
-        ['file1.png', 'file2.png', ...]
+    Returns: ['file1.png', 'file2.png', ...]
     """
     pending_list = []
     with shelve.open(shelve_filename) as db:
         for key, info in db.items():
-            if info.get("전송 상태") == "미전송":
+            if (isinstance(info, dict) and 
+                info.get("전송 상태") == "미전송"):
                 pending_list.append(key)
     return pending_list
+
+def get_pending_file_infos(shelve_filename: str) -> list:
+    """
+    '미전송' 상태인 file_info(딕셔너리)를 리스트 형태로 반환.
+
+    Returns:
+        [
+          {
+            "파일명": filename,
+            "크기": ...,
+            "수정 날짜": ...,
+            "전송 상태": "미전송"
+          },
+          ...
+        ]
+    """
+    pending_list = []
+    with shelve.open(shelve_filename) as db:
+        for key, info in db.items():
+            if (isinstance(info, dict) and 
+                info.get("전송 상태") == "미전송"):
+                pending_list.append(info)
+    return pending_list
+
+if __name__ == "__main__":
+    pass

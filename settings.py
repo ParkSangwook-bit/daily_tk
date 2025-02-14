@@ -11,6 +11,7 @@ import threading
 import queue
 import time
 import shelve
+from typing import cast
 
 # UI control
 import uiautomation as uia

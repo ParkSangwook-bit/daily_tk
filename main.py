@@ -1,3 +1,4 @@
+from re import A
 from settings import *
 from style import *
 
@@ -22,6 +23,10 @@ class App(ctk.CTk):
         super().__init__()
         self.title('TEST')
         self.resizable(False, False)
+        
+        # 데이터 홀더(프레임간 데이터 공유 용)
+        self.pending_files_list = []  # 전송 대기 중인 파일 리스트
+        self.student_names = []  # 학생 이름 리스트
 
         # 창 중앙 배치 설정 (디스플레이 스케일링 고려)
         self.geometry(CenterWindowToDisplay(self, 1000, 600, self._get_window_scaling()))
@@ -66,7 +71,7 @@ class App(ctk.CTk):
 
 # 데일리 감지 및 Treeview 표시 프레임
 class DailyDetectionShow(ctk.CTkFrame):
-    def __init__(self, parent, next_frame_callback):
+    def __init__(self, parent: "App", next_frame_callback):
         super().__init__(master=parent)
         # self['relief'] = 'groove'
         self.file_list_len = 0  # 파일 리스트 길이
@@ -154,14 +159,17 @@ class DailyDetectionShow(ctk.CTkFrame):
         지정된 디렉토리에서 파일 정보를 읽어 shelve에 저장한 후,
         Treeview에 표시
         """
+        # lint 오탐지로, self.master를 App으로 캐스팅(다른 클래스도 필요하면 추가 또는 다른 방법 적용 필요)
+        app = cast(App, self.master)
+        
         # 1) 디렉토리 내 .png 파일을 shelve에 저장
 
         stored_count = store_png_files_in_shelve(directory, shelve_filename)
         print(f"{stored_count}개의 .png 파일을 shelve에 저장했습니다.")
 
-        # 2) shelve로부터 모든 파일 정보를 불러와 Treeview에 삽입
-        file_info_list = load_all_files_from_shelve(shelve_filename)
-        for file_info in file_info_list:
+        # 2) shelve로부터 미전송 파일 리스트를 Treeview에 삽입
+        app.pending_files_list = get_pending_file_infos(shelve_filename)
+        for file_info in app.pending_files_list:
             filename = file_info["파일명"]
             size_bytes = file_info["크기"]
             mod_date = file_info["수정 날짜"]
@@ -170,10 +178,10 @@ class DailyDetectionShow(ctk.CTkFrame):
             # Treeview 삽입
             self.file_tree.insert("", "end", values=(filename, f"{size_bytes} bytes", mod_date, status))
             self.file_list_len += 1
-            #! 디버그용 print(file_info)
 
         # 혹은 self.daily_info_label 등의 UI 요소에도 추가 반영
         self.daily_info_label.configure(text=f"총 파일 개수: {self.file_list_len}")
+        print()
 
 # 전송 및 전송 과정 표시 프레임
 class SendingProcessShow(ctk.CTkFrame):
@@ -217,6 +225,7 @@ class SendingProcessShow(ctk.CTkFrame):
         # 사용자 입력 방지
         def disable_user_input(event):
             return "break"
+        
         self.status_log_txtbox.bind("<Key>", disable_user_input)  
         self.status_log_txtbox.bind("<Button-1>", disable_user_input)
 
@@ -254,7 +263,7 @@ class SendingProcessShow(ctk.CTkFrame):
     def send_files_worker(self, log_queue):
         """
         백그라운드 스레드에서 실행될 전송 로직:
-        1. shelve에서 '미전송' 파일 목록 가져오기
+        1. App 클래스에 있는 데이터 홀더로부터 파일 정보 리스트를 가져옴
         2. uiautomation으로 카카오톡 열기 & 파일 전송
         3. ROI 캡처 + opencv 매칭
         4. shelve 업데이트
@@ -262,51 +271,55 @@ class SendingProcessShow(ctk.CTkFrame):
         """
         try:
             # (1) 미전송 파일 목록 불러오기
-            with shelve.open("daily_files_shelve") as db:
-                keys = [k for k in db.keys() if db[k].get("전송 상태") == "미전송"]
+            app = cast(App, self.master)
             
-            total_files = len(keys)
+            # with shelve.open("daily_files_shelve") as db:
+            #     keys = [k for k in db.keys() if db[k].get("전송 상태") == "미전송"]
+            
+            # total_files = len(keys)
+            
+            total_files = len(app.pending_files_list)
             log_queue.put(("log", f"[Worker] 미전송 파일 {total_files}개 발견."))
-
-            # uia: 카카오 실행 + 활성화
-            ensure_kakao_running()
-            time.sleep(1)
-            kakao_window = activate_kakao_window()
-            time.sleep(1)
-
-            processed_count = 0
-
-            for filename in keys:
-                # 파일 정보 가져오기
-                with shelve.open("daily_files_shelve", writeback=True) as db:
-                    file_info = db[filename]
-
-                log_queue.put(("log", f"[Worker] '{filename}' 전송 시도중..."))
-
-                # (2) uia 부분 (간단 예시 - 실제 로직 대체)
-                # ex) search_friend, attach_file, etc.
-                time.sleep(2)  # 더미 대기
-                # ROI 캡처 + opencv (또는 그냥 더미 결과)
-                # (ROI 예시)
-                # roi_image = capture_roi(kakao_window) # 별도 함수 구현
-                # result = detect_status(roi_image, templates_dict)
-                result = "성공"  # 일단 더미
+            # 서브 스레드에서 uiautomation을 사용하기 위해 COM(Windows Component Object Model) 초기화
+            with auto.UIAutomationInitializerInThread():
+                # uia: 카카오 실행 + 활성화
+                ensure_kakao_running()
+                time.sleep(1)
+                kakao_window = activate_kakao_window()
+                print("[FLAG] 카카오톡 창 활성화")
                 time.sleep(1)
 
-                # (4) shelve 업데이트
-                with shelve.open("daily_files_shelve", writeback=True) as db:
-                    file_info = db[filename]
-                    file_info["전송 상태"] = result
-                    db[filename] = file_info
+                processed_count = 0
 
-                log_queue.put(("log", f"[Worker] '{filename}' => {result}"))
+                for filename in app.pending_files_list:
+                    # 파일 정보 가져오기
+                    # with shelve.open("daily_files_shelve", writeback=True) as db:
+                    #     file_info = db[filename]
 
-                # Progress 갱신
-                processed_count += 1
-                progress_ratio = processed_count / total_files
-                log_queue.put(("progress", progress_ratio))
+                    log_queue.put(("log", f"[Worker] '{filename}' 전송 시도중..."))
 
-            log_queue.put(("done", "모든 파일 전송 작업이 완료되었습니다."))
+                    # (2) uia 부분 (간단 예시 - 실제 로직 대체)
+                    # ex) search_friend, attach_file, etc.
+                    #? sending_process()
+                    time.sleep(2)  # 더미 대기
+                    # ROI 캡처 + opencv (또는 그냥 더미 결과)
+                    # (ROI 예시)
+                    # roi_image = capture_roi(kakao_window) # 별도 함수 구현
+                    # result = detect_status(roi_image, templates_dict)
+                    result = "성공"  # 일단 더미 #! 리턴을 opencv 측에서 주는게 확실할듯
+                    time.sleep(1)
+
+                    # (4) shelve 업데이트                    
+                    update_file_status("daily_files_shelve", filename, result)
+
+                    log_queue.put(("log", f"[Worker] '{filename}' => {result}"))
+
+                    # Progress 갱신
+                    processed_count += 1
+                    progress_ratio = processed_count / total_files
+                    log_queue.put(("progress", progress_ratio))
+
+                log_queue.put(("done", "모든 파일 전송 작업이 완료되었습니다."))
 
         except Exception as e:
             log_queue.put(("log", f"[에러] {str(e)}"))
@@ -326,7 +339,8 @@ class SendingProcessShow(ctk.CTkFrame):
             elif msg_type == "done":
                 self.status_log_txtbox.insert("end", msg_content + "\n")
                 self.start_button.configure(state="normal")
-
+                
+        # 0.2초마다 Queue 확인
         self.after(200, self.poll_queue)
 
 
