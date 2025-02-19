@@ -135,15 +135,13 @@ def store_png_files_in_shelve(directory: str, shelve_filename: str) -> int:
     with shelve.open(shelve_filename, writeback=True) as db:
         # 만약 student_names가 없으면 초기화
         
-        # for key, value in db.items():
-        #     print(f"key = {key}, value = {value}")
+        if "student_names" not in db:
+            db["student_names"] = set()
+            
         students = db["student_names"]
         
         for name in students:
             print(f"name = {name}")
-               
-        if "student_names" not in db:
-            db["student_names"] = set()  # set으로 중복 방지
 
         student_names_set = db["student_names"]
 

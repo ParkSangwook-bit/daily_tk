@@ -1,8 +1,7 @@
-from re import A
-from settings import *
+from settings import ttk, ctk, cast, queue, threading, traceback
 from style import *
 
-from sending_proccess import *
+from kakao_control import *
 from shelve_manager import *
 
 # ctypes 라이브러리를 사용하여 화면 스케일링을 위한 DPI 정보를 가져옴
@@ -282,25 +281,30 @@ class SendingProcessShow(ctk.CTkFrame):
             log_queue.put(("log", f"[Worker] 미전송 파일 {total_files}개 발견."))
             # 서브 스레드에서 uiautomation을 사용하기 위해 COM(Windows Component Object Model) 초기화
             with auto.UIAutomationInitializerInThread():
-                # uia: 카카오 실행 + 활성화
+                # auto: 카카오 실행 + 활성화
                 ensure_kakao_running()
                 time.sleep(1)
-                kakao_window = activate_kakao_window()
+                self.kakao_window = activate_kakao_window()
                 print("[FLAG] 카카오톡 창 활성화")
                 time.sleep(1)
 
                 processed_count = 0
 
+                # filename = tpye(dict)
                 for filename in app.pending_files_list:
                     # 파일 정보 가져오기
-                    # with shelve.open("daily_files_shelve", writeback=True) as db:
-                    #     file_info = db[filename]
 
-                    log_queue.put(("log", f"[Worker] '{filename}' 전송 시도중..."))
+                    log_queue.put(("log", f"[Worker] '{filename["파일명"]}' 전송 시도중..."))
 
-                    # (2) uia 부분 (간단 예시 - 실제 로직 대체)
+                    # (2) auto 부분 (간단 예시 - 실제 로직 대체)
                     # ex) search_friend, attach_file, etc.
-                    #? sending_process()
+                    if self.kakao_window is not None:
+                        # 파일 전송 시도
+                        sending_process(filename, self.kakao_window)
+                    else:
+                        log_queue.put(("log", "[에러] 카카오톡 창을 찾을 수 없습니다."))
+                        break
+                    
                     time.sleep(2)  # 더미 대기
                     # ROI 캡처 + opencv (또는 그냥 더미 결과)
                     # (ROI 예시)
@@ -322,7 +326,8 @@ class SendingProcessShow(ctk.CTkFrame):
                 log_queue.put(("done", "모든 파일 전송 작업이 완료되었습니다."))
 
         except Exception as e:
-            log_queue.put(("log", f"[에러] {str(e)}"))
+            trace_str = traceback.format_exc()
+            log_queue.put(("log", f"[에러] {str(e)}\n{trace_str}"))
             log_queue.put(("done", "작업 중단 (에러 발생)"))
 
     def poll_queue(self):
