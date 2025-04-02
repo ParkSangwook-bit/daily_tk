@@ -1,5 +1,6 @@
 from settings import ttk, ctk, cast, queue, threading, traceback
 from style import *
+import constants
 
 from kakao_control import *
 from shelve_manager import *
@@ -300,7 +301,7 @@ class SendingProcessShow(ctk.CTkFrame):
                     # ex) search_friend, attach_file, etc.
                     if self.kakao_window is not None:
                         # 파일 전송 시도
-                        sending_process(filename, self.kakao_window)
+                        result = sending_process(filename, self.kakao_window)
                     else:
                         log_queue.put(("log", "[에러] 카카오톡 창을 찾을 수 없습니다."))
                         break
@@ -310,11 +311,10 @@ class SendingProcessShow(ctk.CTkFrame):
                     # (ROI 예시)
                     # roi_image = capture_roi(kakao_window) # 별도 함수 구현
                     # result = detect_status(roi_image, templates_dict)
-                    result = "성공"  # 일단 더미 #! 리턴을 opencv 측에서 주는게 확실할듯
                     time.sleep(1)
 
                     # (4) shelve 업데이트                    
-                    update_file_status("daily_files_shelve", filename, result)
+                    #  update_file_status("daily_files_shelve", filename, result if result is not None else "unknown")
 
                     log_queue.put(("log", f"[Worker] '{filename}' => {result}"))
 

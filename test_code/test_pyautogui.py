@@ -1,7 +1,6 @@
-import time
+from settings import time, pyautogui, subprocess, Any
+import constants
 import uiautomation as uia
-import pyautogui
-import subprocess
 
 from test_template_matching_opencv import *
 
@@ -15,7 +14,7 @@ def is_kakao_running():
     return False
 
 def launch_kakao():
-    kakao_path = r"C:\Program Files (x86)\Kakao\KakaoTalk\KakaoTalk.exe"
+    kakao_path = constants.KAKAOTALK_INSTALL_PATH
     try:
         subprocess.Popen([kakao_path], shell=False)
         print("카카오톡 프로세스 실행 완료")

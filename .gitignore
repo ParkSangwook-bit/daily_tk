@@ -223,4 +223,7 @@ pyrightconfig.json
 *.txt
 logs/
 
+### local variables ###
+constants.py
+
 # End of https://www.toptal.com/developers/gitignore/api/python,visualstudiocode,opencv
