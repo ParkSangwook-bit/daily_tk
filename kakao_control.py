@@ -1,6 +1,8 @@
 from constants import MAIN_SHELVE
 from settings import shelve, theWorld, time, auto, subprocess
-from shelve_manager import extract_student_name, update_file_status
+# 순환 의존성 해결: extract_student_name 함수를 utils 모듈에서 가져옴
+from utils import extract_student_name
+from shelve_manager import update_file_status
 import template_matching_opencv as tm
 
 # subprocess를 이용해 KakaoTalk.exe 프로세스가 실행 중인지 확인

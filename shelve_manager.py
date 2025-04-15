@@ -1,5 +1,6 @@
 from settings import shelve, os, datetime
-from kakao_control import *
+# 순환 의존성 해결: kakao_control 임포트 제거, utils 모듈 사용
+from utils import extract_student_name
 
 # TODO CRUD 구현
 
