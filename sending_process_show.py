@@ -1,5 +1,7 @@
 from settings import *
 from style import *
+import kakao_control
+
 
 class SendingProcessShow(ctk.CTkFrame):
     def __init__(self, parent):
@@ -93,9 +95,9 @@ class SendingProcessShow(ctk.CTkFrame):
             log_queue.put(("log", f"[Worker] 미전송 파일 {total_files}개 발견."))
 
             # uia: 카카오 실행 + 활성화
-            ensure_kakao_running()
+            kakao_control.ensure_kakao_running()
             time.sleep(1)
-            kakao_window = activate_kakao_window()
+            kakao_window = kakao_control.activate_kakao_window()
             time.sleep(1)
 
             processed_count = 0

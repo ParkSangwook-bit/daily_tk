@@ -11,68 +11,22 @@ BASE_DIR = Path(__file__).parent
 TEMPLATES_DIR = BASE_DIR / "templates"  # 템플릿 이미지 폴더
 DATA_DIR = BASE_DIR / "data"  # 데이터 저장 폴더
 CONFIG_DIR = BASE_DIR / "config"  # 설정 파일 저장 폴더 추가
+ROI_SCREENSHOT_DIR = BASE_DIR / "roi_screenshot"  # ROI 스크린샷 저장 폴더 추가
+SHELVE_TEST_DIR = BASE_DIR.parent / "shelve_test"  # BASE_DIR의 상위 폴더에 있는 shelve_test 폴더
 
 # 필요한 디렉토리 자동 생성
 TEMPLATES_DIR.mkdir(exist_ok=True)
 DATA_DIR.mkdir(exist_ok=True)
 CONFIG_DIR.mkdir(exist_ok=True)
+ROI_SCREENSHOT_DIR.mkdir(exist_ok=True)  # ROI 스크린샷 폴더 생성
 
 # 이미지 템플릿 경로 (상대 경로로 변환)
-PATH_MAIN_IMAGE = str(TEMPLATES_DIR / "sample_sending_complete_crop.png")
+PATH_MAIN_IMAGE = str(TEMPLATES_DIR / "sample_success_am_kor.png")
 PATH_TEMPLATE_SUC = str(TEMPLATES_DIR / "sample_am_kor_200per.png")
 PATH_TEMPLATE_FAIL = str(TEMPLATES_DIR / "sample_template_aggresive2.png")
 
 # for laptop
 PATH_TEMPLATE_SUC_LAPTOP = str(TEMPLATES_DIR / "sample_pm_kor_125per.png")
-
-# 기본 더미 이미지 생성 함수
-def create_dummy_template_images():
-    """
-    템플릿 이미지가 없을 경우 기본 더미 이미지를 생성합니다.
-    이를 통해 프로그램이 처음 실행될 때도 오류 없이 동작할 수 있습니다.
-    """
-    # 파일이 없을 때만 생성
-    if not os.path.exists(PATH_MAIN_IMAGE):
-        # 메인 ROI 이미지 생성 (300x100, 흰 배경)
-        main_img = np.ones((300, 500, 3), dtype=np.uint8) * 255
-        # 메시지 추가
-        cv2.putText(main_img, "Default ROI Area", (50, 150), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-        cv2.imwrite(PATH_MAIN_IMAGE, main_img)
-        print(f"기본 메인 이미지 생성됨: {PATH_MAIN_IMAGE}")
-    
-    # 성공 템플릿 이미지
-    if not os.path.exists(PATH_TEMPLATE_SUC):
-        # 성공 템플릿 생성 (100x50, 초록색 배경)
-        success_img = np.ones((100, 200, 3), dtype=np.uint8) * 255
-        # 녹색 사각형 그리기
-        cv2.rectangle(success_img, (20, 20), (180, 80), (0, 255, 0), -1)
-        cv2.putText(success_img, "SUCCESS", (40, 60), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        cv2.imwrite(PATH_TEMPLATE_SUC, success_img)
-        print(f"기본 성공 템플릿 생성됨: {PATH_TEMPLATE_SUC}")
-    
-    # 실패 템플릿 이미지
-    if not os.path.exists(PATH_TEMPLATE_FAIL):
-        # 실패 템플릿 생성 (100x50, 빨간색 배경)
-        fail_img = np.ones((100, 200, 3), dtype=np.uint8) * 255
-        # 빨간색 사각형 그리기
-        cv2.rectangle(fail_img, (20, 20), (180, 80), (0, 0, 255), -1)
-        cv2.putText(fail_img, "FAIL", (60, 60), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
-        cv2.imwrite(PATH_TEMPLATE_FAIL, fail_img)
-        print(f"기본 실패 템플릿 생성됨: {PATH_TEMPLATE_FAIL}")
-    
-    # 노트북용 성공 템플릿 (작은 크기)
-    if not os.path.exists(PATH_TEMPLATE_SUC_LAPTOP):
-        # 노트북용 성공 템플릿 생성 (75x40, 초록색 배경)
-        success_laptop_img = np.ones((75, 150, 3), dtype=np.uint8) * 255
-        # 녹색 사각형 그리기
-        cv2.rectangle(success_laptop_img, (15, 15), (135, 60), (0, 255, 0), -1)
-        cv2.putText(success_laptop_img, "SUCCESS", (20, 45), 
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
-        cv2.imwrite(PATH_TEMPLATE_SUC_LAPTOP, success_laptop_img)
-        print(f"기본 노트북용 성공 템플릿 생성됨: {PATH_TEMPLATE_SUC_LAPTOP}")
 
 # 사용자 설정 파일 경로 (JSON 형식)
 USER_CONFIG_PATH = CONFIG_DIR / "user_settings.json"
@@ -131,9 +85,6 @@ TM_TEMPLATES = {
     "실패": PATH_TEMPLATE_FAIL,
     # "전송중": PATH_TEMPLATE_SENDING
 }
-
-# 애플리케이션 초기화 시 더미 템플릿 이미지 생성
-create_dummy_template_images()
 
 # 시스템 메타데이터 감지 (해상도, 배율 등)
 def detect_system_metadata():
@@ -198,34 +149,35 @@ def validate_paths():
     
     return issues
 
-# 실행 시 필요한 템플릿 경로 반환
-def get_appropriate_template_path():
-    """
-    개선: 화면 해상도와 배율에 따라 적절한 템플릿 경로 반환
-    """
-    metadata = detect_system_metadata()
-    screen_width = metadata.get("screen_width", 1920)
+# # 실행 시 필요한 템플릿 경로 반환
+# def get_appropriate_template_path():
+#     """
+#     개선: 화면 해상도와 배율에 따라 적절한 템플릿 경로 반환
+#     """
+#     metadata = detect_system_metadata()
+#     screen_width = metadata.get("screen_width", 1920)
     
-    # 작은 화면 또는 노트북 환경
-    if screen_width <= 1366:
-        return PATH_TEMPLATE_SUC_LAPTOP
-    # 일반 데스크탑 환경
-    else:
-        return PATH_TEMPLATE_SUC
+#     # 작은 화면 또는 노트북 환경
+#     if screen_width <= 1366:
+#         return PATH_TEMPLATE_SUC_LAPTOP
+#     # 일반 데스크탑 환경
+#     else:
+#         return PATH_TEMPLATE_SUC
 
 if __name__ == "__main__":
-    # 경로 유효성 검사
-    path_issues = validate_paths()
-    if path_issues:
-        print("경로 유효성 검사 결과:")
-        for issue in path_issues:
-            print(f"- {issue}")
-    else:
-        print("모든 경로가 유효합니다.")
+    # # 경로 유효성 검사
+    # path_issues = validate_paths()
+    # if path_issues:
+    #     print("경로 유효성 검사 결과:")
+    #     for issue in path_issues:
+    #         print(f"- {issue}")
+    # else:
+    #     print("모든 경로가 유효합니다.")
     
-    # 시스템 메타데이터 출력
-    metadata = detect_system_metadata()
-    print("\n시스템 메타데이터:")
-    for key, value in metadata.items():
-        print(f"- {key}: {value}")
+    # # 시스템 메타데이터 출력
+    # metadata = detect_system_metadata()
+    # print("\n시스템 메타데이터:")
+    # for key, value in metadata.items():
+    #     print(f"- {key}: {value}")
+    pass
 

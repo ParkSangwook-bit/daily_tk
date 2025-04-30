@@ -152,7 +152,7 @@ def store_png_files_in_shelve(directory: str, shelve_filename: str) -> int:
             if os.path.isfile(filepath) and filename.lower().endswith(".png"):
                 # 2) shelve에 이미 존재하는 파일명인가?
                 if filename not in db:
-                    # 새 파일만 "미전송" 등록
+                    # 새로운 파일 정보 생성 및 저장
                     file_info = {
                         "파일명": filename,
                         "크기": os.path.getsize(filepath),
@@ -164,8 +164,9 @@ def store_png_files_in_shelve(directory: str, shelve_filename: str) -> int:
 
                 # 학생 이름 추출 후 student_names에 추가
                 name = extract_student_name(filename)
-                if name:
+                if name:  # 이름이 있을 경우에만 추가
                     student_names_set.add(name)
+
 
         # writeback=True 이므로, 수정한 student_names_set도 자동 반영 
         db["student_names"] = student_names_set

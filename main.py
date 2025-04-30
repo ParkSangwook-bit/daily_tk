@@ -1,4 +1,4 @@
-from settings import ttk, ctk, cast, queue, threading, traceback
+from settings import ttk, ctk, queue, cast, threading, traceback
 from style import *
 import constants
 
@@ -152,7 +152,7 @@ class DailyDetectionShow(ctk.CTkFrame):
         self.daily_info_label = ctk.CTkLabel(self, text=f'총 파일 개수: {self.file_list_len}', font=('Arial', 16, 'bold'))
         self.daily_info_label.grid(row=1, column=0, sticky='nw', padx=(20, 0))
         
-        self.read_directory_and_update_treeview('..\\shelve_test', 'daily_files_shelve')
+        self.read_directory_and_update_treeview(str(constants.SHELVE_TEST_DIR), 'daily_files_shelve')
 
     def read_directory_and_update_treeview(self, directory: str, shelve_filename: str):
         """
