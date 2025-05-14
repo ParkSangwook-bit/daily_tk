@@ -1,3 +1,4 @@
+from turtle import update
 from constants import MAIN_SHELVE, SHELVE_TEST_DIR, ROI_OFFSET_BOTTOM
 from settings  import shelve, theWorld, time, auto, subprocess
 from utils     import extract_student_name
@@ -439,6 +440,67 @@ def dummy_process_func(filename: dict, kakao_window: auto.WindowControl):# -> An
 #             print("OnlineMainView not found.")
 #     else:
 #         print("KakaoTalk window not found or not activated.")
+
+def sending_process_without_opencv(
+        filename: dict,
+        # kakao_window: auto.WindowControl,
+        work_flag_bool: bool = False    # False: 전송 안함 / True: 전송함
+) -> str:
+    """
+    1) 메인 창에서 학생 이름을 검색해 Enter 1회로 채팅 팝업을 연다.
+    2) 단순 매크로 작업 후 템플릿 매칭 결과를 shelve DB 에 기록
+    """
+    # 0. 카카오톡 실행 보장
+    ensure_kakao_running()
+    time.sleep(1.5) #! 카카오톡 실행 대기. 그러나 나중에 프로세스 탐지로 비동기 처리
+
+    file_name_temp = filename["파일명"]
+    student_name   = extract_student_name(file_name_temp)
+
+    # # 1. 메인 창에서 친구 검색 → 채팅 팝업 열기
+    # main_view = find_element_with_partial_name(kakao_window, "OnlineMainView")
+    # if not main_view:
+    #     print("[ERR] OnlineMainView not found")
+    #     return "unknown"
+
+    # move_cursor_to_top_left(main_view)
+    # click_by_offset(main_view, 60, 60)    auto.SendKeys('{Ctrl}f');              time.sleep(0.2)
+
+    auto.SendKeys('{Ctrl}f')
+    auto.SendKeys('{Ctrl}{HOME}')  # 문서의 맨 앞으로
+    time.sleep(0.1)
+    print("여기서 부터 shift + end 누르기 시도")
+    auto.SendKeys('{Shift}{END}')  # 전체 선택
+    time.sleep(0.1)
+    print("여기서 부터 backspace 누르기 시도")
+    auto.SendKeys('{DELETE}')
+    time.sleep(0.2)
+    # 검색창에 특정 친구 이름 입력 후 엔터
+    auto.SendKeys(student_name, interval=0.01)  # 이름 검색
+    auto.SendKeys('{ENTER}');              time.sleep(0.3)   # 팝업 생성
+
+    #  3. 첨부 파일 전송 시퀀스
+    auto.SendKeys('{Ctrl}t');   time.sleep(0.2) # 첨부파일 창 열기
+    auto.SendKeys('{Ctrl}l');   time.sleep(0.2) # 디렉토리 열기
+    auto.SendKeys(str(SHELVE_TEST_DIR), interval=0.01)  # 디렉토리 경로 입력
+    auto.SendKeys('{ENTER}');   time.sleep(0.2) # 디렉토리 열기
+    auto.SendKeys('{Alt}n');    time.sleep(0.2) # 파일명 입력창 포커스
+    auto.SendKeys(filename["파일명"], interval=0.01)    # 파일명 입력
+    auto.SendKeys('{Alt}o');    time.sleep(0.2) # 파일 열기
+    if work_flag_bool:
+        auto.SendKeys('{ENTER}');   time.sleep(0.2) # 파일 전송 확인창에서 엔터 (전송)
+    else:
+        auto.SendKeys('{esc}');   time.sleep(0.2) # 파일 전송 확인창에서 ESC (취소)
+
+    # 4. shelve 갱신 및 채팅창 닫기
+    # update_file_status(MAIN_SHELVE, file_name_temp, result)
+    status = "성공" if work_flag_bool else "미전송"
+    update_file_status(MAIN_SHELVE, file_name_temp, status)
+    auto.SendKeys('{ESC}')
+    time.sleep(0.2)
+
+    return status
+
 def sending_process(
         filename: dict,
         kakao_window: auto.WindowControl
@@ -470,32 +532,33 @@ def sending_process(
     auto.SendKeys(student_name, interval=0.01)
     auto.SendKeys('{ENTER}');              time.sleep(0.3)   # 팝업 생성
 
-    # ── 2. 팝업 창 및 채팅 로그 Pane 확보 ─────────────────
-    hwnd_fg  = auto.GetForegroundWindow()
-    chat_win = auto.WindowControl(handle=hwnd_fg)
+    #! 우선은 opencv 기능 없음
+    # # ── 2. 팝업 창 및 채팅 로그 Pane 확보 ─────────────────
+    # hwnd_fg  = auto.GetForegroundWindow()
+    # chat_win = auto.WindowControl(handle=hwnd_fg)
 
-    chat_log = chat_win.Control(
-        ClassName='EVA_VH_ListControl_Dblclk',
-        AutomationId='100',
-        searchDepth=3                      # 손자까지 탐색
-    )
-    if not chat_log.Exists(1000, 200):     # 1 s 폴링
-        print("[ERR] chat list Pane not found")
-        return "unknown"
+    # chat_log = chat_win.Control(
+    #     ClassName='EVA_VH_ListControl_Dblclk',
+    #     AutomationId='100',
+    #     searchDepth=3                      # 손자까지 탐색
+    # )
+    # if not chat_log.Exists(1000, 200):     # 1 s 폴링
+    #     print("[ERR] chat list Pane not found")
+    #     return "unknown"
 
-    # ── 2‑A. ROI 좌표 계산 (동적 margin) ────────────────
-    phys_rect = chat_log.BoundingRectangle          # 물리 px
-    l, t, r, b = ui_to_logical(phys_rect)           # DPI 보정
+    # # ── 2‑A. ROI 좌표 계산 (동적 margin) ────────────────
+    # phys_rect = chat_log.BoundingRectangle          # 물리 px
+    # l, t, r, b = ui_to_logical(phys_rect)           # DPI 보정
 
-    H = b - t                                       # Pane 높이
-    ROI_MARGIN = max(80, int(H * 0.12))             # 12 % 또는 80 px
-    roi_bounds = {
-        "left":   l,
-        "top":    b - ROI_MARGIN,
-        "right":  r,
-        "bottom": b
-    }
-    print("[DEBUG] ROI:", roi_bounds)
+    # H = b - t                                       # Pane 높이
+    # ROI_MARGIN = max(80, int(H * 0.12))             # 12 % 또는 80 px
+    # roi_bounds = {
+    #     "left":   l,
+    #     "top":    b - ROI_MARGIN,
+    #     "right":  r,
+    #     "bottom": b
+    # }
+    # print("[DEBUG] ROI:", roi_bounds)
 
     # ── 3. 첨부 파일 전송 시퀀스 ────────────────────────
     auto.SendKeys('{Ctrl}t');   time.sleep(0.2)
@@ -503,20 +566,22 @@ def sending_process(
     auto.SendKeys(str(SHELVE_TEST_DIR), interval=0.01)
     auto.SendKeys('{ENTER}');   time.sleep(0.2)
     auto.SendKeys('{Alt}n');    time.sleep(0.2)
-    auto.SendKeys(filename["파일명"], interval=0.05)
+    auto.SendKeys(filename["파일명"], interval=0.01)
     auto.SendKeys('{Alt}o');    time.sleep(0.2)
     auto.SendKeys('{ENTER}');   time.sleep(0.2)
 
-    # ── 4. ROI 캡처 & 템플릿 매칭 ───────────────────────
-    main_img  = tm.capture_screen_region(roi_bounds)
-    templates = tm.load_templates()
-    result    = tm.detect_status(main_img, templates)
+    #! opencv 기능 없음
+    # # ── 4. ROI 캡처 & 템플릿 매칭 ───────────────────────
+    # main_img  = tm.capture_screen_region(roi_bounds)
+    # templates = tm.load_templates()
+    # result    = tm.detect_status(main_img, templates)
 
     # ── 5. shelve 갱신 및 채팅창 닫기 ──────────────────
     update_file_status(MAIN_SHELVE, file_name_temp, result)
     auto.SendKeys('{ESC}');     time.sleep(0.2)
 
     return result
+
 
 
 if __name__ == "__main__":

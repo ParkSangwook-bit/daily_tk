@@ -252,5 +252,26 @@ def get_pending_file_infos(shelve_filename: str) -> list:
                 pending_list.append(info)
     return pending_list
 
+def get_specific_status_files_infos(status_list: list, shelve_filename: str) -> list:
+    """
+    shelve에서 특정 상태들에 해당하는 file_info들을 리스트로 반환.
+
+    Args:
+        status_list: list[str]
+            원하는 상태들의 리스트 예시: ["성공", "실패", "전송중", "미전송"]
+        shelve_filename: str
+            shelve 파일 경로 또는 이름
+    Returns:
+        list: 해당 상태들의 파일 정보 리스트
+    """
+    result = []
+    with shelve.open(shelve_filename) as db:
+        for key, info in db.items():
+            if (isinstance(info, dict) and 
+                info.get("전송 상태") in status_list):
+                result.append(info)  # status_list가 아닌 result에 추가
+    return result
+
+
 if __name__ == "__main__":
     pass
